@@ -1,0 +1,110 @@
+library(tidyverse)
+library(scales)
+library(ggrepel)
+
+tn = trans_new('inv',
+               function(x) 1/x,
+               function(y) 1/y)
+
+# Diabetes ---
+d = read_csv('diabetes.csv')
+
+scores = d %>% 
+         gather(model, mse) %>% 
+         group_by(model) %>% 
+         summarise(means = mean(-mse), sds = sd(mse))
+
+lr_mean = scores %>% filter(model == 'linear_regression') %>% pull(means)
+lr_sds = scores %>% filter(model == 'linear_regression') %>% pull(sds)
+
+newscores = scores %>% 
+            mutate(means = (means - lr_mean)/lr_mean,
+                   sds = (sds - lr_sds)/lr_sds,
+                   model = str_replace(model,'_', ' ') %>% str_to_title())
+
+
+newscores %>% 
+  ggplot(aes(means, sds, label = model))+
+  geom_hline(aes(yintercept = 0), color = 'dark gray')+
+  geom_vline(aes(xintercept = 0), color = 'dark gray')+
+  geom_point()+
+  geom_text_repel()+
+  theme_minimal()+
+  theme(aspect.ratio = 1/1.61)+
+  labs(x = 'Relative Difference in MSE',
+       y = 'Relative Difference in Fold to Fold Variability',
+       title = 'Diabetes')+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 6), labels = scales::percent)+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 6), labels = scales::percent)
+
+ggsave(filename = 'diabetes.png')
+
+# Boston ----
+d = read_csv('boston.csv')
+
+scores = d %>% 
+  gather(model, mse) %>% 
+  group_by(model) %>% 
+  summarise(means = mean(-mse), sds = sd(mse))
+
+lr_mean = scores %>% filter(model == 'linear_regression') %>% pull(means)
+lr_sds = scores %>% filter(model == 'linear_regression') %>% pull(sds)
+
+newscores = scores %>% 
+  mutate(means = (means - lr_mean)/lr_mean,
+         sds = (sds - lr_sds)/lr_sds,
+         model = str_replace(model,'_', ' ') %>% str_to_title())
+
+newscores %>% 
+  ggplot(aes(means, sds, label = model))+
+  geom_hline(aes(yintercept = 0), color = 'dark gray')+
+  geom_vline(aes(xintercept = 0), color = 'dark gray')+
+  geom_point()+
+  geom_text_repel()+
+  theme_minimal()+
+  theme(aspect.ratio = 1/1.61)+
+  labs(x = 'Relative Difference in MSE',
+       y = 'Relative Difference in Fold to Fold Variability',
+       title = 'Boston')+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 6), labels = scales::percent)+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 6), labels = scales::percent)
+
+ggsave(filename = 'boston.png')
+
+
+  
+
+# Nonlinear ----
+d = read_csv('non-linear.csv')
+
+scores = d %>% 
+  gather(model, mse) %>% 
+  group_by(model) %>% 
+  summarise(means = mean(-mse), sds = sd(mse))
+
+lr_mean = scores %>% filter(model == 'linear_regression') %>% pull(means)
+lr_sds = scores %>% filter(model == 'linear_regression') %>% pull(sds)
+
+newscores = scores %>% 
+  mutate(means = (means - lr_mean)/lr_mean,
+         sds = (sds - lr_sds)/lr_sds,
+         model = str_replace(model,'_', ' ') %>% str_to_title())
+newscores %>% 
+  ggplot(aes(means, sds, label = model))+
+  geom_hline(aes(yintercept = 0), color = 'dark gray')+
+  geom_vline(aes(xintercept = 0), color = 'dark gray')+
+  geom_point()+
+  geom_text_repel()+
+  theme_minimal()+
+  theme(aspect.ratio = 1/1.61)+
+  labs(x = 'Relative Difference in MSE',
+       y = 'Relative Difference in Fold to Fold Variability',
+       title = 'Non Linear')+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 6), labels = scales::percent)+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 6), labels = scales::percent)
+
+
+ggsave(filename = 'nonlinear.png')
+
+
+

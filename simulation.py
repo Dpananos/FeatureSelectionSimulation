@@ -45,22 +45,30 @@ class CorrelationSelector(BaseEstimator, TransformerMixin):
 
 
 def experiment(data_loader, experiment_name):
+
     X,y = data_loader()
+    
+    # Set up pipelines.  Standard scale everything just in case.
     lasso_selection = make_pipeline(StandardScaler(), LassoSelector(), LinearRegression())
     correlation_selection = make_pipeline(StandardScaler(), CorrelationSelector(), LinearRegression())
     linear_regression = make_pipeline(StandardScaler(), LinearRegression())
     lasso = make_pipeline(StandardScaler(), LassoCV(cv=10))
 
+    # Spline model is finicky.  I have to use column transformer to apply a spline to all columns independently.
+    # Turn the data into a datframe, then apply column transformer.
+    # I scale everything before applying the spline, not sure if this is necccesary though.
     n_observations, n_features = X.shape
     df = pd.DataFrame(X, columns = [f'x_{j}' for j in range(n_features)])
+
     # Purposefully mispecify the knots in the non-linear problem
     list_of_spline_transforms = [(f'spline_{feature}', make_pipeline(StandardScaler(),RestrictedCubicSpline(k=3)), [feature]) for feature in df.columns.tolist()]
     ct = ColumnTransformer(list_of_spline_transforms)
 
     splines = make_pipeline(ct, LinearRegression())
 
-
+    # loop over models
     models = [linear_regression, lasso_selection, correlation_selection, lasso, splines]
+
     cv_results = np.array([cross_val_score(model, df, y, cv=RepeatedKFold(n_splits=10, n_repeats=100), scoring = 'neg_mean_squared_error') for model in models]).T
 
     results_df = pd.DataFrame(cv_results, columns = ['linear_regression','lasso_selection','correlation_selection','lasso','splines'])
@@ -70,6 +78,7 @@ def experiment(data_loader, experiment_name):
 
 if __name__=='__main__':
 
+    # Execute the experiments
     experiment(diabetes_data, experiment_name='diabetes')
     experiment(boston_data, experiment_name='boston')
     experiment(non_linear_data, experiment_name='non-linear')

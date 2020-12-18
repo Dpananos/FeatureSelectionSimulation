@@ -73,7 +73,7 @@ def experiment(data_loader, experiment_name):
 
     results_df = pd.DataFrame(cv_results, columns = ['linear_regression','lasso_selection','correlation_selection','lasso','splines'])
 
-    results_df.to_csv(f'{experiment_name}.csv', index = False)
+    results_df.to_csv(f'data/{experiment_name}.csv', index = False)
 
 
 if __name__=='__main__':
